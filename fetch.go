@@ -8,6 +8,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"log"
+	"os"
 )
 
 type Fetcher struct {
@@ -66,17 +67,28 @@ func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
 
 	log.Printf("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
 
-	infile, err := f.reader.Read(path)
+	outpath := f.writer.URI(path)
+	do_fetch := true
 
-	if err != nil {
-		return err
+	if !f.Force {
+		_, err := os.Stat(outpath)
+		do_fetch = os.IsNotExist(err)
 	}
 
-	err = f.writer.Write(path, infile)
+	log.Printf("do fetch for %s : %t\n", f.writer.URI(path), do_fetch)
+
+	if do_fetch {
+
+		infile, err := f.reader.Read(path)
+
+		if err != nil {
+			return err
+		}
+
+		err = f.writer.Write(path, infile)
+	}
 
 	if fetch_hierarchy {
-
-		outpath := f.writer.URI(path)
 
 		ft, err := feature.LoadWOFFeatureFromFile(outpath)
 
@@ -93,6 +105,11 @@ func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
 		for _, h := range hiers {
 
 			for _, id := range h {
+
+				if id < 0 {
+					continue
+				}
+
 				id_map[id] = true
 			}
 		}

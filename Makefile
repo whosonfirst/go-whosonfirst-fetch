@@ -20,6 +20,7 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-readwrite-fs/..."
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-readwrite-http/..."
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-geojson-v2"
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-csv"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-uri"
 
 vendor-deps: rmdeps deps
@@ -36,3 +37,4 @@ fmt:
 bin: 	self
 	rm -rf bin/*
 	GOPATH=$(GOPATH) go build -o bin/wof-fetch-ids cmd/wof-fetch-ids.go
+	GOPATH=$(GOPATH) go build -o bin/wof-fetch-metafiles cmd/wof-fetch-metafiles.go
