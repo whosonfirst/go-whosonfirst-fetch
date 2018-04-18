@@ -15,7 +15,7 @@ func main() {
 	var source = flag.String("source", "https://data.whosonfirst.org", "...")
 	var target = flag.String("target", "", "...")
 	var fetch_hierarchy = flag.Bool("fetch-hierarchy", true, "...")
-	var force = flag.Bool("false", false, "...")
+	var force = flag.Bool("force", false, "...")
 
 	flag.Parse()
 
