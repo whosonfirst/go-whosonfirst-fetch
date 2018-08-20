@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
-	"github.com/whosonfirst/go-whosonfirst-readwrite-fs/writer"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
 	"log"
 	"os"

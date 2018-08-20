@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-csv"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
-	"github.com/whosonfirst/go-whosonfirst-readwrite-fs/writer"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
 	"io"
 	"log"
