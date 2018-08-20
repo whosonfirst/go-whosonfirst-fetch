@@ -11,6 +11,8 @@ import (
 	"os"
 )
 
+// please add a logger thingy
+
 type Fetcher struct {
 	reader reader.Reader
 	writer writer.Writer
@@ -28,7 +30,7 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 	return &f, nil
 }
 
-func (f *Fetcher) FetchIDs(ids []int64, fetch_hierarchy bool) error {
+func (f *Fetcher) FetchIDs(ids []int64, fetch_belongsto bool) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -37,7 +39,7 @@ func (f *Fetcher) FetchIDs(ids []int64, fetch_hierarchy bool) error {
 	err_ch := make(chan error)
 
 	for _, id := range ids {
-		go f.FetchIDWithContext(ctx, id, fetch_hierarchy, done_ch, err_ch)
+		go f.FetchIDWithContext(ctx, id, fetch_belongsto, done_ch, err_ch)
 	}
 
 	remaining := len(ids)
@@ -57,7 +59,7 @@ func (f *Fetcher) FetchIDs(ids []int64, fetch_hierarchy bool) error {
 	return nil
 }
 
-func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
+func (f *Fetcher) FetchID(id int64, fetch_belongsto bool) error {
 
 	path, err := uri.Id2RelPath(id)
 
@@ -88,7 +90,7 @@ func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
 		err = f.writer.Write(path, infile)
 	}
 
-	if fetch_hierarchy {
+	if fetch_belongsto {
 
 		ft, err := feature.LoadWOFFeatureFromFile(outpath)
 
@@ -96,29 +98,7 @@ func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
 			return err
 		}
 
-		// or just properties.Belongsto(ft) which doesn't
-		// exist yet... (20180413/thisisaaronland)
-
-		hiers := whosonfirst.Hierarchies(ft)
-		id_map := make(map[int64]bool)
-
-		for _, h := range hiers {
-
-			for _, id := range h {
-
-				if id < 0 {
-					continue
-				}
-
-				id_map[id] = true
-			}
-		}
-
-		ids := make([]int64, 0)
-
-		for id, _ := range id_map {
-			ids = append(ids, id)
-		}
+		ids := whosonfirst.BelongsTo(ft)
 
 		err = f.FetchIDs(ids, false)
 
@@ -130,7 +110,7 @@ func (f *Fetcher) FetchID(id int64, fetch_hierarchy bool) error {
 	return nil
 }
 
-func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_hierarchy bool, done_ch chan bool, err_ch chan error) {
+func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belongsto bool, done_ch chan bool, err_ch chan error) {
 
 	defer func() {
 		done_ch <- true
@@ -142,7 +122,7 @@ func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_hierar
 		return
 	default:
 
-		err := f.FetchID(id, fetch_hierarchy)
+		err := f.FetchID(id, fetch_belongsto)
 
 		if err != nil {
 			err_ch <- err

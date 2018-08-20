@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
-	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"	
 	github_reader "github.com/whosonfirst/go-whosonfirst-readwrite-github/reader"
 	http_reader "github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"log"
 	"os"
@@ -18,7 +18,7 @@ func main() {
 	var source = flag.String("source", "fs", "Valid options are: fs, github")
 	var dsn = flag.String("dsn", "https://data.whosonfirst.org", "...")
 	var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
-	var fetch_hierarchy = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
+	var fetch_belongsto = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
 	var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
 
 	flag.Parse()
@@ -40,11 +40,15 @@ func main() {
 		log.Fatal("Nothing to fetch!")
 	}
 
+	// please make this a MultiReader...
+
 	var rdr reader.Reader
 
 	switch *source {
 
-	case "fs":
+	case "http":
+
+		// please write github_reader.NewHTTPReaderFromString(dsn string)
 
 		r, err := http_reader.NewHTTPReader(*dsn)
 
@@ -55,6 +59,8 @@ func main() {
 		rdr = r
 
 	case "github":
+
+		// please write github_reader.NewGitHubReaderFromString(dsn string)
 
 		*dsn = strings.Trim(*dsn, " ")
 		parts := strings.Split(*dsn, "=")
@@ -68,7 +74,7 @@ func main() {
 		}
 
 		repo := parts[1]
-		
+
 		r, err := github_reader.NewGitHubReader(repo, "master")
 
 		if err != nil {
@@ -92,6 +98,8 @@ func main() {
 		*target = cwd
 	}
 
+	// please make this a MultiWriter... maybe?
+
 	wr, err := writer.NewFSWriter(*target)
 
 	if err != nil {
@@ -106,7 +114,7 @@ func main() {
 
 	f.Force = *force
 
-	err = f.FetchIDs(ids, *fetch_hierarchy)
+	err = f.FetchIDs(ids, *fetch_belongsto)
 
 	if err != nil {
 		log.Fatal(err)
