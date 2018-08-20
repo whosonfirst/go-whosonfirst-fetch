@@ -4,8 +4,8 @@ import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-csv"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
-	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"io"
 	"log"
 	"os"
@@ -15,9 +15,9 @@ import (
 func main() {
 
 	var source = flag.String("source", "https://data.whosonfirst.org", "...")
-	var target = flag.String("target", "", "...")
-	var fetch_hierarchy = flag.Bool("fetch-hierarchy", true, "...")
-	var force = flag.Bool("force", false, "...")
+	var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
+	var fetch_hierarchy = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
+	var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
 
 	flag.Parse()
 

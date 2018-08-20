@@ -3,19 +3,23 @@ package main
 import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"	
+	github_reader "github.com/whosonfirst/go-whosonfirst-readwrite-github/reader"
+	http_reader "github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
-	"github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
 
-	var source = flag.String("source", "https://data.whosonfirst.org", "...")
-	var target = flag.String("target", "", "...")
-	var fetch_hierarchy = flag.Bool("fetch-hierarchy", true, "...")
-	var force = flag.Bool("force", false, "...")
+	var source = flag.String("source", "fs", "Valid options are: fs, github")
+	var dsn = flag.String("dsn", "https://data.whosonfirst.org", "...")
+	var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
+	var fetch_hierarchy = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
+	var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
 
 	flag.Parse()
 
@@ -36,10 +40,45 @@ func main() {
 		log.Fatal("Nothing to fetch!")
 	}
 
-	rdr, err := reader.NewHTTPReader(*source)
+	var rdr reader.Reader
 
-	if err != nil {
-		log.Fatal(err)
+	switch *source {
+
+	case "fs":
+
+		r, err := http_reader.NewHTTPReader(*dsn)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rdr = r
+
+	case "github":
+
+		*dsn = strings.Trim(*dsn, " ")
+		parts := strings.Split(*dsn, "=")
+
+		if len(parts) != 2 {
+			log.Fatal("Invalid DSN")
+		}
+
+		if parts[0] != "repo" {
+			log.Fatal("Invalid DSN")
+		}
+
+		repo := parts[1]
+		
+		r, err := github_reader.NewGitHubReader(repo, "master")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rdr = r
+
+	default:
+		log.Fatal("Invalid source")
 	}
 
 	if *target == "" {
