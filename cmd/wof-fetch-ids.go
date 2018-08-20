@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/whosonfirst/go-whosonfirst-cli/flags"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
 	github_reader "github.com/whosonfirst/go-whosonfirst-readwrite-github/reader"
 	http_reader "github.com/whosonfirst/go-whosonfirst-readwrite-http/reader"
@@ -10,13 +11,16 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 )
 
 func main() {
 
-	var source = flag.String("source", "fs", "Valid options are: fs, github")
-	var dsn = flag.String("dsn", "https://data.whosonfirst.org", "...")
+	var sources flags.MultiDSNString
+	flag.Var(&sources, "reader", "...")
+
+	// var source = flag.String("source", "fs", "Valid options are: fs, github")
+	// var dsn = flag.String("dsn", "https://data.whosonfirst.org", "...")
+
 	var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
 	var fetch_belongsto = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
 	var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
@@ -40,51 +44,72 @@ func main() {
 		log.Fatal("Nothing to fetch!")
 	}
 
-	// please make this a MultiReader...
+	var readers = make([]reader.Reader, 0)
 
-	var rdr reader.Reader
+	for _, dsn := range sources {
 
-	switch *source {
+		reader, ok := dsn["type"]
 
-	case "http":
-
-		// please write github_reader.NewHTTPReaderFromString(dsn string)
-
-		r, err := http_reader.NewHTTPReader(*dsn)
-
-		if err != nil {
-			log.Fatal(err)
+		if !ok {
+			log.Fatal("Missing source for DSN")
 		}
 
-		rdr = r
+		switch reader {
+		case "http":
 
-	case "github":
+			// please write github_reader.NewHTTPReaderFromString(dsn string)
 
-		// please write github_reader.NewGitHubReaderFromString(dsn string)
+			src, ok := dsn["source"]
 
-		*dsn = strings.Trim(*dsn, " ")
-		parts := strings.Split(*dsn, "=")
+			if !ok {
+				log.Fatal("Missing HTTP source")
+			}
 
-		if len(parts) != 2 {
-			log.Fatal("Invalid DSN")
+			r, err := http_reader.NewHTTPReader(src)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			readers = append(readers, r)
+
+		case "github":
+
+			// please write github_reader.NewGitHubReaderFromString(dsn string)
+
+			repo, ok := dsn["repo"]
+
+			if !ok {
+				log.Fatal("Missing GitHub repo")
+			}
+
+			branch, ok := dsn["branch"]
+
+			if !ok {
+				branch = "master"
+			}
+
+			r, err := github_reader.NewGitHubReader(repo, branch)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			readers = append(readers, r)
+
+		default:
+			log.Fatal("Invalid source")
 		}
+	}
 
-		if parts[0] != "repo" {
-			log.Fatal("Invalid DSN")
-		}
+	if len(readers) == 0 {
+		log.Fatal("At least one valid reader is required")
+	}
 
-		repo := parts[1]
+	rdr, err := reader.NewMultiReader(readers...)
 
-		r, err := github_reader.NewGitHubReader(repo, "master")
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		rdr = r
-
-	default:
-		log.Fatal("Invalid source")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if *target == "" {
