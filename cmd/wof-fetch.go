@@ -5,15 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-cli/flags"
+	"github.com/whosonfirst/go-whosonfirst-fetch"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-bundle"
+	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	_ "github.com/whosonfirst/go-whosonfirst-uri"
 	"io"
 	"log"
-	"os"
-	"strconv"
+	"path/filepath"
 )
 
 func main() {
@@ -24,6 +25,8 @@ func main() {
 
 	var reader_flags flags.MultiDSNString
 	flag.Var(&reader_flags, "reader", desc)
+
+	var mode = flag.String("mode", "repo", "...")
 
 	// var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
 	var fetch_belongsto = flag.Bool("fetch-belongsto", true, "Fetch all the IDs that a given ID belongs to.")
@@ -37,40 +40,43 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// wr, err := bundle.NewMultiWriterFromFlags("...")
-
-	var wr interface{}
-
-	fetcher, err := fetch.NewFetcher(r, wr)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fetcher.Force = *force
-
-	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
-
-		f, err := feature.LoadFeatureFromReader(fh)
-
-		if err != nil {
-			return err
-		}
-
-		wofid := whosonfirst.Id(f)
-
-		return fetcher.FetchID(wofid, *fetch_belongsto)
-	}
-
-	i, err := index.NewIndexer(*mode, f)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for _, path := range flag.Args() {
 
-		err := i.IndexPath(path)
+		data := filepath.Join(path, "data")
+		wr, err := writer.NewFSWriter(data)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fetcher, err := fetch.NewFetcher(r, wr)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fetcher.Force = *force
+
+		cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
+
+			f, err := feature.LoadFeatureFromReader(fh)
+
+			if err != nil {
+				return err
+			}
+
+			wofid := whosonfirst.Id(f)
+
+			return fetcher.FetchID(wofid, *fetch_belongsto)
+		}
+
+		i, err := index.NewIndexer(*mode, cb)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = i.IndexPath(path)
 
 		if err != nil {
 			log.Fatal(err)
