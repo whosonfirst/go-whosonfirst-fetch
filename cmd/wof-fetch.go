@@ -12,7 +12,6 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-log"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-bundle"
 	"io"
-	golog "log"
 	"os"
 	"strings"
 )
@@ -52,19 +51,19 @@ func main() {
 	r, err := bundle.NewMultiReaderFromFlags(reader_flags)
 
 	if err != nil {
-		golog.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	wr, err := bundle.NewMultiWriterFromFlags(writer_flags)
 
 	if err != nil {
-		golog.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	fetcher, err := fetch.NewFetcher(r, wr)
 
 	if err != nil {
-		golog.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	fetcher.Logger = logger
@@ -103,7 +102,7 @@ func main() {
 	i, err := index.NewIndexer(*mode, cb)
 
 	if err != nil {
-		golog.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	for _, path := range flag.Args() {
@@ -111,7 +110,7 @@ func main() {
 		err = i.IndexPath(path)
 
 		if err != nil {
-			golog.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 
