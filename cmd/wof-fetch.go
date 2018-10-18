@@ -28,8 +28,11 @@ func main() {
 	var mode = flag.String("mode", "repo", "...")
 
 	// var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
+	// var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
+
 	var fetch_belongsto = flag.Bool("fetch-belongsto", false, "Fetch all the IDs that a given ID belongs to.")
-	var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
+
+	var retries = flag.Int("retries", 0, "The number of time to retry a failed fetch")
 
 	flag.Parse()
 
@@ -40,11 +43,10 @@ func main() {
 	}
 
 	// PLEASE MAKE ME A MULTIWRITER THINGY...
-	
-	// data := filepath.Join(path, "data")
-	// wr, err := writer.NewFSWriter(data)
 
-	wr, err := writer.NewNullWriter()
+	// wr, err := writer.NewNullWriter()
+
+	wr, err := writer.NewFSWriter("data")
 
 	if err != nil {
 		log.Fatal(err)
@@ -56,8 +58,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fetcher.Force = *force
-
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
 		f, err := feature.LoadFeatureFromReader(fh)
@@ -68,9 +68,18 @@ func main() {
 
 		wofid := whosonfirst.Id(f)
 
-		err = fetcher.FetchID(wofid, *fetch_belongsto)
+		attempts := *retries + 1
 
-		log.Println("FETCH", wofid, err)
+		for attempts > 0 {
+
+			err = fetcher.FetchID(wofid, *fetch_belongsto)
+			attempts = attempts - 1
+
+			if err == nil {
+				break
+			}
+		}
+
 		return err
 	}
 
