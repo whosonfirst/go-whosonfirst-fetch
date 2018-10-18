@@ -4,27 +4,30 @@ import (
 	"context"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
+	"github.com/whosonfirst/go-whosonfirst-log"	
 	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
-	"log"
-	"os"
+	_ "log"
+	_ "os"
 )
-
-// please add a logger thingy
 
 type Fetcher struct {
 	reader reader.Reader
 	writer writer.Writer
 	Force  bool
+	Logger *log.WOFLogger
 }
 
 func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 
+	logger := log.SimpleWOFLogger()
+	
 	f := Fetcher{
 		reader: rdr,
 		writer: wr,
 		Force:  false,
+		Logger: logger,
 	}
 
 	return &f, nil
@@ -67,17 +70,21 @@ func (f *Fetcher) FetchID(id int64, fetch_belongsto bool) error {
 		return err
 	}
 
-	log.Printf("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
+	f.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
 
 	outpath := f.writer.URI(path)
 	do_fetch := true
 
+	// this doesn't really make sense in a (multi) reader.Reader context - we 
+	// might need to add an 'Exists()' method to the reader.Reader interface...
+	// (20181018/thisisaaronland)
+	
+	/*
 	if !f.Force {
 		_, err := os.Stat(outpath)
 		do_fetch = os.IsNotExist(err)
 	}
-
-	log.Printf("do fetch for %s : %t\n", f.writer.URI(path), do_fetch)
+	*/
 
 	if do_fetch {
 
