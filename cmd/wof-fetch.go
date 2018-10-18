@@ -10,10 +10,9 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-bundle"
-	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"io"
 	"log"
-	_ "path/filepath"
+	_ "os"
 )
 
 func main() {
@@ -25,6 +24,9 @@ func main() {
 	var reader_flags flags.MultiDSNString
 	flag.Var(&reader_flags, "reader", desc)
 
+	var writer_flags flags.MultiDSNString
+	flag.Var(&writer_flags, "writer", "...")
+	
 	var mode = flag.String("mode", "repo", "...")
 
 	// var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
@@ -41,12 +43,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// PLEASE MAKE ME A MULTIWRITER THINGY...
-
-	// wr, err := writer.NewNullWriter()
-
-	wr, err := writer.NewFSWriter("data")
+	
+	wr, err := bundle.NewMultiWriterFromFlags(writer_flags)
 
 	if err != nil {
 		log.Fatal(err)
