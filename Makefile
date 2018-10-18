@@ -36,5 +36,4 @@ fmt:
 
 bin: 	self
 	rm -rf bin/*
-	GOPATH=$(GOPATH) go build -o bin/wof-fetch-ids cmd/wof-fetch-ids.go
-	GOPATH=$(GOPATH) go build -o bin/wof-fetch-metafiles cmd/wof-fetch-metafiles.go
+	GOPATH=$(GOPATH) go build -o bin/wof-fetch cmd/wof-fetch.go
