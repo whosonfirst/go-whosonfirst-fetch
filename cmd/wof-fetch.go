@@ -9,28 +9,34 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-index"
+	"github.com/whosonfirst/go-whosonfirst-log"
 	"github.com/whosonfirst/go-whosonfirst-readwrite-bundle"
 	"io"
-	"log"
-	_ "os"
+	golog "log"
+	"os"
+	"strings"
 )
 
 func main() {
 
-	str_valid := bundle.ValidReadersString()
+	valid_readers := bundle.ValidReadersString()
+	valid_writers := bundle.ValidWritersString()
 
-	desc := fmt.Sprintf("DSN strings MUST contain a 'reader=SOURCE' pair followed by any additional pairs required by that reader. Supported reader sources are: %s.", str_valid)
+	desc_readers := fmt.Sprintf("One or more DSN strings representing a source to read data from. DSN strings MUST contain a 'reader=SOURCE' pair followed by any additional pairs required by that reader. Supported reader sources are: %s.", valid_readers)
+
+	desc_writers := fmt.Sprintf("One or more DSN strings representing a target to write data to. DSN strings MUST contain a 'writer=SOURCE' pair followed by any additional pairs required by that writer. Supported writer sources are: %s.", valid_writers)
 
 	var reader_flags flags.MultiDSNString
-	flag.Var(&reader_flags, "reader", desc)
+	flag.Var(&reader_flags, "reader", desc_readers)
 
 	var writer_flags flags.MultiDSNString
-	flag.Var(&writer_flags, "writer", "...")
-	
-	var mode = flag.String("mode", "repo", "...")
+	flag.Var(&writer_flags, "writer", desc_writers)
 
-	// var target = flag.String("target", "", "Where to write the data fetched. Currently on filesystem targets are supported.")
-	// var force = flag.Bool("force", false, "Fetch IDs even if they are already present.")
+	valid_modes := index.Modes()
+	str_valid_modes := strings.Join(valid_modes, ", ")
+
+	desc_mode := fmt.Sprintf("The mode to use when indexing data. Valid modes are: %s", str_valid_modes)
+	var mode = flag.String("mode", "repo", desc_mode)
 
 	var fetch_belongsto = flag.Bool("fetch-belongsto", false, "Fetch all the IDs that a given ID belongs to.")
 
@@ -38,23 +44,30 @@ func main() {
 
 	flag.Parse()
 
+	logger := log.SimpleWOFLogger()
+
+	stdout := io.Writer(os.Stdout)
+	logger.AddLogger(stdout, "status")
+
 	r, err := bundle.NewMultiReaderFromFlags(reader_flags)
 
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err)
 	}
-	
+
 	wr, err := bundle.NewMultiWriterFromFlags(writer_flags)
 
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err)
 	}
 
 	fetcher, err := fetch.NewFetcher(r, wr)
 
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err)
 	}
+
+	fetcher.Logger = logger
 
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
@@ -78,13 +91,19 @@ func main() {
 			}
 		}
 
-		return err
+		if err != nil {
+			logger.Warning("Unable to fetch %d because '%v'", wofid, err)
+			return err
+		}
+
+		logger.Info("Successfully fetched %d", wofid)
+		return nil
 	}
 
 	i, err := index.NewIndexer(*mode, cb)
 
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err)
 	}
 
 	for _, path := range flag.Args() {
@@ -92,7 +111,7 @@ func main() {
 		err = i.IndexPath(path)
 
 		if err != nil {
-			log.Fatal(err)
+			golog.Fatal(err)
 		}
 	}
 
