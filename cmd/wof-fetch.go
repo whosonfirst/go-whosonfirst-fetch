@@ -37,7 +37,8 @@ func main() {
 	desc_mode := fmt.Sprintf("The mode to use when indexing data. Valid modes are: %s", str_valid_modes)
 	var mode = flag.String("mode", "repo", desc_mode)
 
-	var fetch_belongsto = flag.Bool("fetch-belongsto", false, "Fetch all the IDs that a given ID belongs to.")
+	var belongs_to flags.MultiString
+	flag.Var(&belongs_to, "belongs-to", "...")
 
 	var retries = flag.Int("retries", 0, "The number of time to retry a failed fetch")
 
@@ -82,7 +83,7 @@ func main() {
 
 		for attempts > 0 {
 
-			err = fetcher.FetchID(wofid, *fetch_belongsto)
+			err = fetcher.FetchID(wofid, belongs_to)
 			attempts = attempts - 1
 
 			if err == nil {

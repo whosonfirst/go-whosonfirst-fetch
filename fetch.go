@@ -33,7 +33,7 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 	return &f, nil
 }
 
-func (f *Fetcher) FetchIDs(ids []int64, fetch_belongsto bool) error {
+func (f *Fetcher) FetchIDs(ids []int64, belongs_to []string) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -42,7 +42,7 @@ func (f *Fetcher) FetchIDs(ids []int64, fetch_belongsto bool) error {
 	err_ch := make(chan error)
 
 	for _, id := range ids {
-		go f.FetchIDWithContext(ctx, id, fetch_belongsto, done_ch, err_ch)
+		go f.FetchIDWithContext(ctx, id, belongs_to, done_ch, err_ch)
 	}
 
 	remaining := len(ids)
@@ -62,7 +62,7 @@ func (f *Fetcher) FetchIDs(ids []int64, fetch_belongsto bool) error {
 	return nil
 }
 
-func (f *Fetcher) FetchID(id int64, fetch_belongsto bool) error {
+func (f *Fetcher) FetchID(id int64, belongs_to []string) error {
 
 	path, err := uri.Id2RelPath(id)
 
@@ -97,7 +97,9 @@ func (f *Fetcher) FetchID(id int64, fetch_belongsto bool) error {
 		err = f.writer.Write(path, infile)
 	}
 
-	if fetch_belongsto {
+	count_belongs_to := len(belongs_to)
+
+	if count_belongs_to > 0 {
 
 		ft, err := feature.LoadWOFFeatureFromFile(outpath)
 
@@ -105,19 +107,29 @@ func (f *Fetcher) FetchID(id int64, fetch_belongsto bool) error {
 			return err
 		}
 
-		ids := whosonfirst.BelongsTo(ft)
+		ids := make([]int64, 0)
 
-		err = f.FetchIDs(ids, false)
+		if count_belongs_to == 1 && belongs_to[0] == "all" {
+
+			ids = whosonfirst.BelongsTo(ft)
+
+		} else {
+
+			// CHECK wof:hierarchy...
+		}
+
+		err = f.FetchIDs(ids, []string{})
 
 		if err != nil {
 			return err
 		}
+
 	}
 
 	return nil
 }
 
-func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belongsto bool, done_ch chan bool, err_ch chan error) {
+func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belongsto []string, done_ch chan bool, err_ch chan error) {
 
 	defer func() {
 		done_ch <- true
