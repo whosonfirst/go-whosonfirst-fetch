@@ -10,24 +10,33 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	_ "log"
 	_ "os"
+	"strings"
+	"sync"
 )
 
 type Fetcher struct {
-	reader reader.Reader
-	writer writer.Writer
-	Force  bool
-	Logger *log.WOFLogger
+	reader     reader.Reader
+	writer     writer.Writer
+	processing *sync.Map
+	processed  *sync.Map
+	Force      bool
+	Logger     *log.WOFLogger
 }
 
 func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 
 	logger := log.SimpleWOFLogger()
 
+	processing := new(sync.Map)
+	processed := new(sync.Map)
+
 	f := Fetcher{
-		reader: rdr,
-		writer: wr,
-		Force:  false,
-		Logger: logger,
+		reader:     rdr,
+		writer:     wr,
+		Force:      false,
+		Logger:     logger,
+		processing: processing,
+		processed:  processed,
 	}
 
 	return &f, nil
@@ -64,6 +73,24 @@ func (f *Fetcher) FetchIDs(ids []int64, belongs_to ...string) error {
 
 func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
+	_, ok := f.processed.Load(id)
+
+	if ok {
+		f.Logger.Status("%d has already been processed, skipping", id)
+		return nil
+	}
+
+	_, ok = f.processing.LoadOrStore(id, true)
+
+	if ok {
+		f.Logger.Status("%d is being processed, skipping", id)
+		return nil
+	}
+
+	defer func() {
+		f.processing.Delete(id)
+	}()
+
 	path, err := uri.Id2RelPath(id)
 
 	if err != nil {
@@ -73,29 +100,20 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 	f.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
 
 	outpath := f.writer.URI(path)
-	do_fetch := true
 
-	// this doesn't really make sense in a (multi) reader.Reader context - we
-	// might need to add an 'Exists()' method to the reader.Reader interface...
-	// (20181018/thisisaaronland)
+	infile, err := f.reader.Read(path)
 
-	/*
-		if !f.Force {
-			_, err := os.Stat(outpath)
-			do_fetch = os.IsNotExist(err)
-		}
-	*/
-
-	if do_fetch {
-
-		infile, err := f.reader.Read(path)
-
-		if err != nil {
-			return err
-		}
-
-		err = f.writer.Write(path, infile)
+	if err != nil {
+		return err
 	}
+
+	err = f.writer.Write(path, infile)
+
+	if err != nil {
+		return err
+	}
+
+	f.processed.Store(id, true)
 
 	count_belongs_to := len(belongs_to)
 
@@ -115,15 +133,49 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 		} else {
 
+			hiers := whosonfirst.Hierarchies(ft)
+
+			for _, h := range hiers {
+
+				for pt, other_id := range h {
+
+					possible := true
+
+					for _, candidate_id := range ids {
+						
+						if other_id == candidate_id {
+							possible = false
+							break
+						}
+					}
+
+					if possible == false {
+						continue
+					}
+
+					pt = strings.Replace(pt, "_id", "", -1)
+
+					for _, candidate_pt := range belongs_to {
+
+						if pt == candidate_pt {
+							ids = append(ids, other_id)
+							break
+						}
+					}
+
+				}
+			}
+
 			// CHECK wof:hierarchy...
 		}
 
-		err = f.FetchIDs(ids)
+		if len(ids) > 0 {
+			err = f.FetchIDs(ids)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
-
 	}
 
 	return nil
@@ -142,7 +194,6 @@ func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belong
 	default:
 
 		err := f.FetchID(id, fetch_belongsto...)
-
 		if err != nil {
 			err_ch <- err
 		}
