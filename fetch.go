@@ -8,6 +8,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
+	_ "io"
 	_ "log"
 	_ "os"
 	"strings"
@@ -19,6 +20,7 @@ type Fetcher struct {
 	writer     writer.Writer
 	processing *sync.Map
 	processed  *sync.Map
+	throttle   chan bool
 	Force      bool
 	Logger     *log.WOFLogger
 }
@@ -30,6 +32,13 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 	processing := new(sync.Map)
 	processed := new(sync.Map)
 
+	max_fetch := 10
+	throttle := make(chan bool, max_fetch)
+
+	for i := 0; i < max_fetch; i++ {
+		throttle <- true
+	}
+
 	f := Fetcher{
 		reader:     rdr,
 		writer:     wr,
@@ -37,6 +46,7 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 		Logger:     logger,
 		processing: processing,
 		processed:  processed,
+		throttle:   throttle,
 	}
 
 	return &f, nil
@@ -87,7 +97,14 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 		return nil
 	}
 
+	f.Logger.Status("waiting for throttle (%d)", id)
+
+	<-f.throttle
+
+	f.Logger.Status("processing (%d)", id)
+
 	defer func() {
+		f.throttle <- true
 		f.processing.Delete(id)
 	}()
 
@@ -99,18 +116,22 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 	f.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
 
-	outpath := f.writer.URI(path)
+	infile, read_err := f.reader.Read(path)
 
-	infile, err := f.reader.Read(path)
-
-	if err != nil {
-		return err
+	if read_err != nil {
+		return read_err
 	}
 
-	err = f.writer.Write(path, infile)
+	defer func() {
+		infile.Close()
+	}()
 
-	if err != nil {
-		return err
+	outpath := f.writer.URI(path)
+
+	write_err := f.writer.Write(path, infile)
+
+	if write_err != nil {
+		return write_err
 	}
 
 	f.processed.Store(id, true)
@@ -142,7 +163,7 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 					possible := true
 
 					for _, candidate_id := range ids {
-						
+
 						if other_id == candidate_id {
 							possible = false
 							break
@@ -165,15 +186,14 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 				}
 			}
-
-			// CHECK wof:hierarchy...
 		}
 
 		if len(ids) > 0 {
+
 			err = f.FetchIDs(ids)
 
 			if err != nil {
-				return err
+				// return err
 			}
 		}
 	}
@@ -192,10 +212,12 @@ func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belong
 	case <-ctx.Done():
 		return
 	default:
+		// pass
+	}
 
-		err := f.FetchID(id, fetch_belongsto...)
-		if err != nil {
-			err_ch <- err
-		}
+	err := f.FetchID(id, fetch_belongsto...)
+
+	if err != nil {
+		err_ch <- err
 	}
 }
