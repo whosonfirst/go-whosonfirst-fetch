@@ -83,7 +83,7 @@ func main() {
 
 		for attempts > 0 {
 
-			err = fetcher.FetchID(wofid, belongs_to)
+			err = fetcher.FetchID(wofid, belongs_to...)
 			attempts = attempts - 1
 
 			if err == nil {

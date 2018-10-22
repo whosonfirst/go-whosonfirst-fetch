@@ -33,7 +33,7 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 	return &f, nil
 }
 
-func (f *Fetcher) FetchIDs(ids []int64, belongs_to []string) error {
+func (f *Fetcher) FetchIDs(ids []int64, belongs_to ...string) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -62,7 +62,7 @@ func (f *Fetcher) FetchIDs(ids []int64, belongs_to []string) error {
 	return nil
 }
 
-func (f *Fetcher) FetchID(id int64, belongs_to []string) error {
+func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 	path, err := uri.Id2RelPath(id)
 
@@ -118,7 +118,7 @@ func (f *Fetcher) FetchID(id int64, belongs_to []string) error {
 			// CHECK wof:hierarchy...
 		}
 
-		err = f.FetchIDs(ids, []string{})
+		err = f.FetchIDs(ids)
 
 		if err != nil {
 			return err
@@ -141,7 +141,7 @@ func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belong
 		return
 	default:
 
-		err := f.FetchID(id, fetch_belongsto)
+		err := f.FetchID(id, fetch_belongsto...)
 
 		if err != nil {
 			err_ch <- err
