@@ -18,6 +18,16 @@ import (
 
 func main() {
 
+	logger := log.SimpleWOFLogger()
+	stdout := io.Writer(os.Stdout)
+	logger.AddLogger(stdout, "status")
+
+	opts, err := fetch.DefaultOptions()
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	valid_readers := bundle.ValidReadersString()
 	valid_writers := bundle.ValidWritersString()
 
@@ -38,16 +48,15 @@ func main() {
 	var mode = flag.String("mode", "repo", desc_mode)
 
 	var belongs_to flags.MultiString
-	flag.Var(&belongs_to, "belongs-to", "...")
+	flag.Var(&belongs_to, "belongs-to", "One or more placetypes that a given ID may belong to to also fetch. You may also pass 'all' as a short-hand to fetch the entire hierarchy for a place.")
 
-	var retries = flag.Int("retries", 0, "The number of time to retry a failed fetch")
+	// maybe move retries in to fetch.Options? (20181022/thisisaaronland)
+	var retries = flag.Int("retries", 0, "The number of time to retry a failed fetch.")
+
+	var clients = flag.Int("clients", opts.MaxClients, "The number of time to retry a failed fetch.")
+	var timings = flag.Bool("timings", opts.Timings, "Display timings when fetching records.")
 
 	flag.Parse()
-
-	logger := log.SimpleWOFLogger()
-
-	stdout := io.Writer(os.Stdout)
-	logger.AddLogger(stdout, "status")
 
 	r, err := bundle.NewMultiReaderFromFlags(reader_flags)
 
@@ -61,13 +70,15 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	fetcher, err := fetch.NewFetcher(r, wr)
+	opts.Logger = logger
+	opts.Timings = *timings
+	opts.MaxClients = *clients
+
+	fetcher, err := fetch.NewFetcher(r, wr, opts)
 
 	if err != nil {
 		logger.Fatal(err)
 	}
-
-	fetcher.Logger = logger
 
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 

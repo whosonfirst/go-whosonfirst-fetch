@@ -8,12 +8,29 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
-	_ "io"
-	_ "log"
-	_ "os"
 	"strings"
 	"sync"
+	"time"
 )
+
+type Options struct {
+	Timings    bool
+	MaxClients int
+	Logger     *log.WOFLogger
+}
+
+func DefaultOptions() (*Options, error) {
+
+	logger := log.SimpleWOFLogger()
+
+	o := Options{
+		Timings:    false,
+		MaxClients: 10,
+		Logger:     logger,
+	}
+
+	return &o, nil
+}
 
 type Fetcher struct {
 	reader     reader.Reader
@@ -21,18 +38,15 @@ type Fetcher struct {
 	processing *sync.Map
 	processed  *sync.Map
 	throttle   chan bool
-	Force      bool
-	Logger     *log.WOFLogger
+	options    *Options
 }
 
-func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
-
-	logger := log.SimpleWOFLogger()
+func NewFetcher(rdr reader.Reader, wr writer.Writer, opts *Options) (*Fetcher, error) {
 
 	processing := new(sync.Map)
 	processed := new(sync.Map)
 
-	max_fetch := 10
+	max_fetch := opts.MaxClients
 	throttle := make(chan bool, max_fetch)
 
 	for i := 0; i < max_fetch; i++ {
@@ -42,8 +56,7 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer) (*Fetcher, error) {
 	f := Fetcher{
 		reader:     rdr,
 		writer:     wr,
-		Force:      false,
-		Logger:     logger,
+		options:    opts,
 		processing: processing,
 		processed:  processed,
 		throttle:   throttle,
@@ -83,25 +96,37 @@ func (f *Fetcher) FetchIDs(ids []int64, belongs_to ...string) error {
 
 func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
+	if id < 0 {
+		return nil
+	}
+
 	_, ok := f.processed.Load(id)
 
 	if ok {
-		f.Logger.Status("%d has already been processed, skipping", id)
+		f.options.Logger.Status("%d has already been processed, skipping", id)
 		return nil
 	}
 
 	_, ok = f.processing.LoadOrStore(id, true)
 
 	if ok {
-		f.Logger.Status("%d is being processed, skipping", id)
+		f.options.Logger.Debug("%d is being processed, skipping", id)
 		return nil
 	}
 
-	f.Logger.Status("waiting for throttle (%d)", id)
+	if f.options.Timings {
+
+		t1 := time.Now()
+
+		defer func() {
+
+			f.options.Logger.Status("Time to process %d: %v", id, time.Since(t1))
+		}()
+	}
 
 	<-f.throttle
 
-	f.Logger.Status("processing (%d)", id)
+	f.options.Logger.Debug("processing (%d)", id)
 
 	defer func() {
 		f.throttle <- true
@@ -114,7 +139,7 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 		return err
 	}
 
-	f.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
+	f.options.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
 
 	infile, read_err := f.reader.Read(path)
 
