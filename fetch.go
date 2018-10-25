@@ -139,8 +139,6 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 		return err
 	}
 
-	f.options.Logger.Debug("fetch %d from %s and write to %s", id, f.reader.URI(path), f.writer.URI(path))
-
 	infile, read_err := f.reader.Read(path)
 
 	if read_err != nil {

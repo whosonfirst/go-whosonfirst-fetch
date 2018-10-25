@@ -52,6 +52,7 @@ func main() {
 
 	// maybe move retries in to fetch.Options? (20181022/thisisaaronland)
 	var retries = flag.Int("retries", 0, "The number of time to retry a failed fetch.")
+	var strict = flag.Bool("strict", true, "Stop execution when fetch errors occur.")
 
 	var clients = flag.Int("clients", opts.MaxClients, "The number of time to retry a failed fetch.")
 	var timings = flag.Bool("timings", opts.Timings, "Display timings when fetching records.")
@@ -100,11 +101,19 @@ func main() {
 			if err == nil {
 				break
 			}
+
+			logger.Warning("Failed to fetch %d because %s (remaining attempts: %d)", wofid, err, attempts)
 		}
 
 		if err != nil {
+
 			logger.Warning("Unable to fetch %d because '%v'", wofid, err)
-			return err
+
+			if *strict {
+				return err
+			}
+
+			return nil
 		}
 
 		logger.Info("Successfully fetched %d", wofid)
