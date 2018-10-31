@@ -17,6 +17,7 @@ type Options struct {
 	Timings    bool
 	MaxClients int
 	Logger     *log.WOFLogger
+	Retries    int
 }
 
 func DefaultOptions() (*Options, error) {
@@ -27,6 +28,7 @@ func DefaultOptions() (*Options, error) {
 		Timings:    false,
 		MaxClients: 10,
 		Logger:     logger,
+		Retries:    0,
 	}
 
 	return &o, nil

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-cli/flags"
@@ -13,6 +14,8 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-readwrite-bundle"
 	"io"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -42,6 +45,9 @@ func main() {
 	flag.Var(&writer_flags, "writer", desc_writers)
 
 	valid_modes := index.Modes()
+	valid_modes = append(valid_modes, "ids")
+
+	sort.Strings(valid_modes)
 	str_valid_modes := strings.Join(valid_modes, ", ")
 
 	desc_mode := fmt.Sprintf("The mode to use when indexing data. Valid modes are: %s", str_valid_modes)
@@ -74,11 +80,47 @@ func main() {
 	opts.Logger = logger
 	opts.Timings = *timings
 	opts.MaxClients = *clients
+	opts.Retries = *retries
 
 	fetcher, err := fetch.NewFetcher(r, wr, opts)
 
 	if err != nil {
 		logger.Fatal(err)
+	}
+
+	if *mode == "ids" {
+
+		candidates := flag.Args()
+		count := len(candidates)
+
+		if count == 0 {
+			logger.Fatal(errors.New("Nothing to fetch!"))
+		}
+
+		ids := make([]int64, count)
+
+		for idx, str_id := range flag.Args() {
+
+			wof_id, err := strconv.ParseInt(str_id, 10, 64)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			ids[idx] = wof_id
+		}
+
+		// TO DO: SOMETHING SOMETHING RETRIES WHICH SUGGESTS
+		// WE SHOULD MOVE THAT LOGIC IN TO fetch.go PROBABLY
+		// IN THE OPTIONS THINGY (20181030/thisisaaronland)
+
+		err = fetcher.FetchIDs(ids, belongs_to...)
+
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		os.Exit(0)
 	}
 
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
