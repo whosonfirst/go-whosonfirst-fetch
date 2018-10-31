@@ -110,14 +110,15 @@ func main() {
 			ids[idx] = wof_id
 		}
 
-		// TO DO: SOMETHING SOMETHING RETRIES WHICH SUGGESTS
-		// WE SHOULD MOVE THAT LOGIC IN TO fetch.go PROBABLY
-		// IN THE OPTIONS THINGY (20181030/thisisaaronland)
-
 		err = fetcher.FetchIDs(ids, belongs_to...)
 
 		if err != nil {
-			logger.Fatal(err)
+
+			if *strict {
+				logger.Fatal(err)
+			}
+
+			logger.Warning("Unable to fetch one or more IDs because '%v'", err)
 		}
 
 		os.Exit(0)
@@ -133,19 +134,7 @@ func main() {
 
 		wofid := whosonfirst.Id(f)
 
-		attempts := *retries + 1
-
-		for attempts > 0 {
-
-			err = fetcher.FetchID(wofid, belongs_to...)
-			attempts = attempts - 1
-
-			if err == nil {
-				break
-			}
-
-			logger.Warning("Failed to fetch %d because %s (remaining attempts: %d)", wofid, err, attempts)
-		}
+		err = fetcher.FetchID(wofid, belongs_to...)
 
 		if err != nil {
 

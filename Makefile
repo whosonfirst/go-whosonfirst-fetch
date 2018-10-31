@@ -44,3 +44,18 @@ fmt:
 bin: 	self
 	rm -rf bin/*
 	GOPATH=$(GOPATH) go build -o bin/wof-fetch cmd/wof-fetch.go
+
+# leaving these here as a reference but they will _not_ work (as in compile correctly)
+# because Go won't know where to find the requisite sqlite hoohah for other platforms
+# (20181030/thisisaaronland)
+
+dist-build:
+	OS=darwin make dist-os
+	OS=windows make dist-os
+	OS=linux make dist-os
+
+dist-os:
+	if test ! -d dist/$(OS); then mkdir -p dist/$(OS); fi
+	GOOS=$(OS) GOPATH=$(GOPATH) GOARCH=386 go build -o dist/$(OS)/wof-fetch cmd/wof-fetch.go
+	chmod +x dist/$(OS)/wof-fetch
+	cd dist/$(OS) && shasum -a 256 wof-fetch > wof-fetch.sha256

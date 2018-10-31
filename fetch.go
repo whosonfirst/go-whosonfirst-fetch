@@ -8,6 +8,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
 	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
+	"io"
 	"strings"
 	"sync"
 	"time"
@@ -141,7 +142,23 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 		return err
 	}
 
-	infile, read_err := f.reader.Read(path)
+	var infile io.ReadCloser
+	var read_err error
+
+	attempts := f.options.Retries + 1
+
+	for attempts > 0 {
+
+		infile, read_err = f.reader.Read(path)
+
+		attempts = attempts - 1
+
+		if read_err == nil {
+			break
+		}
+
+		//logger.Warning("Failed to fetch %d because %s (remaining attempts: %d)", wofid, err, attempts)
+	}
 
 	if read_err != nil {
 		return read_err
