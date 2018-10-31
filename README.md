@@ -1,5 +1,7 @@
 # go-whosonfirst-fetch
 
+Tools for fetching Who's On First documents from one or more "readers".
+
 ## Tools
 
 ### wof-fetch
@@ -37,6 +39,7 @@ For example:
 
 Or:
 
+```
 ./bin/wof-fetch -writer 'writer=repo root=/usr/local/data/sfomuseum-data-whosonfirst' -reader 'reader=github repo=whosonfirst-data' -reader 'reader=github repo=whosonfirst-data-postalcode-us' -mode repo /usr/local/data/sfomuseum-data-whosonfirst/
 ```
 
