@@ -14,11 +14,13 @@ Usage of ./bin/wof-fetch:
   -clients int
     	The number of time to retry a failed fetch. (default 10)
   -mode string
-    	The mode to use when indexing data. Valid modes are: directory, feature, feature-collection, files, geojson-ls, meta, path, repo, sqlite (default "repo")
+    	The mode to use when indexing data. Valid modes are: directory, feature, feature-collection, files, geojson-ls, ids, meta, path, repo, sqlite (default "repo")
   -reader value
     	One or more DSN strings representing a source to read data from. DSN strings MUST contain a 'reader=SOURCE' pair followed by any additional pairs required by that reader. Supported reader sources are: fs, github, http, mysql, repo, s3, sqlite.
   -retries int
     	The number of time to retry a failed fetch.
+  -strict
+    	Stop execution when fetch errors occur. (default true)
   -timings
     	Display timings when fetching records.
   -writer value
@@ -30,6 +32,11 @@ An "index" is a valid `go-whosonfirst-index` thingy. A reader is a valid `go-who
 For example:
 
 ```
+./bin/wof-fetch -belongs-to country -reader 'reader=github repo=whosonfirst-data' -writer 'writer=repo root=/usr/local/data/sfomuseum-data-whosonfirst' -mode ids 101736545
+```
+
+Or:
+
 ./bin/wof-fetch -writer 'writer=repo root=/usr/local/data/sfomuseum-data-whosonfirst' -reader 'reader=github repo=whosonfirst-data' -reader 'reader=github repo=whosonfirst-data-postalcode-us' -mode repo /usr/local/data/sfomuseum-data-whosonfirst/
 ```
 
