@@ -1,17 +1,20 @@
 package fetch
 
 import (
+	"bytes"
 	"context"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-log"
-	"github.com/whosonfirst/go-whosonfirst-readwrite/reader"
-	"github.com/whosonfirst/go-whosonfirst-readwrite/writer"
+	"github.com/whosonfirst/go-reader"
+	"github.com/whosonfirst/go-writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"io"
+	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
+	golog "log"
 )
 
 type Options struct {
@@ -44,7 +47,7 @@ type Fetcher struct {
 	options    *Options
 }
 
-func NewFetcher(rdr reader.Reader, wr writer.Writer, opts *Options) (*Fetcher, error) {
+func NewFetcher(ctx context.Context, rdr reader.Reader, wr writer.Writer, opts *Options) (*Fetcher, error) {
 
 	processing := new(sync.Map)
 	processed := new(sync.Map)
@@ -68,16 +71,16 @@ func NewFetcher(rdr reader.Reader, wr writer.Writer, opts *Options) (*Fetcher, e
 	return &f, nil
 }
 
-func (f *Fetcher) FetchIDs(ids []int64, belongs_to ...string) error {
+func (f *Fetcher) FetchIDs(ctx context.Context, ids []int64, belongs_to ...string) error {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	done_ch := make(chan bool)
 	err_ch := make(chan error)
 
 	for _, id := range ids {
-		go f.FetchIDWithContext(ctx, id, belongs_to, done_ch, err_ch)
+		go f.FetchID(ctx, id, belongs_to, done_ch, err_ch)
 	}
 
 	remaining := len(ids)
@@ -97,8 +100,32 @@ func (f *Fetcher) FetchIDs(ids []int64, belongs_to ...string) error {
 	return nil
 }
 
-func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
+func (f *Fetcher) FetchID(ctx context.Context, id int64, fetch_belongsto []string, done_ch chan bool, err_ch chan error) {
 
+	defer func() {
+		done_ch <- true
+	}()
+
+	select {
+
+	case <-ctx.Done():
+		return
+	default:
+		// pass
+	}
+
+	err := f.fetchID(ctx, id, fetch_belongsto...)
+
+	if err != nil {
+		err_ch <- err
+	}
+}
+
+func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) error {
+
+
+	golog.Println("FETCH", id)
+	
 	if id < 0 {
 		return nil
 	}
@@ -149,7 +176,7 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 	for attempts > 0 {
 
-		infile, read_err = f.reader.Read(path)
+		infile, read_err = f.reader.Read(ctx, path)
 
 		attempts = attempts - 1
 
@@ -168,9 +195,16 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 		infile.Close()
 	}()
 
-	outpath := f.writer.URI(path)
+	body, err := ioutil.ReadAll(infile)
 
-	write_err := f.writer.Write(path, infile)
+	if err != nil {
+		return err
+	}
+
+	br := bytes.NewReader(body)
+	fh := ioutil.NopCloser(br)
+	
+	write_err := f.writer.Write(ctx, path, fh)
 
 	if write_err != nil {
 		return write_err
@@ -182,7 +216,10 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 	if count_belongs_to > 0 {
 
-		ft, err := feature.LoadWOFFeatureFromFile(outpath)
+		br := bytes.NewReader(body)
+		fh := ioutil.NopCloser(br)
+		
+		ft, err := feature.LoadWOFFeatureFromReader(fh)
 
 		if err != nil {
 			return err
@@ -232,7 +269,7 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 
 		if len(ids) > 0 {
 
-			err = f.FetchIDs(ids)
+			err = f.FetchIDs(ctx, ids)
 
 			if err != nil {
 				// return err
@@ -241,25 +278,4 @@ func (f *Fetcher) FetchID(id int64, belongs_to ...string) error {
 	}
 
 	return nil
-}
-
-func (f *Fetcher) FetchIDWithContext(ctx context.Context, id int64, fetch_belongsto []string, done_ch chan bool, err_ch chan error) {
-
-	defer func() {
-		done_ch <- true
-	}()
-
-	select {
-
-	case <-ctx.Done():
-		return
-	default:
-		// pass
-	}
-
-	err := f.FetchID(id, fetch_belongsto...)
-
-	if err != nil {
-		err_ch <- err
-	}
 }
