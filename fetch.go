@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	golog "log"
 )
 
 type Options struct {
@@ -122,9 +121,6 @@ func (f *Fetcher) FetchID(ctx context.Context, id int64, fetch_belongsto []strin
 }
 
 func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) error {
-
-
-	golog.Println("FETCH", id)
 	
 	if id < 0 {
 		return nil
@@ -155,8 +151,6 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	}
 
 	<-f.throttle
-	
-	golog.Println("GO")
 	
 	f.options.Logger.Debug("processing (%d)", id)
 
