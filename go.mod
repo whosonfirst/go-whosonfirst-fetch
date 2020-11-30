@@ -11,5 +11,5 @@ require (
 	github.com/whosonfirst/go-whosonfirst-log v0.1.0
 	github.com/whosonfirst/go-whosonfirst-uri v0.2.0
 	github.com/whosonfirst/go-writer v0.2.0
-	gocloud.dev v0.20.0
+	gocloud.dev v0.20.0 // indirect
 )

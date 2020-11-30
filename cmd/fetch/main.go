@@ -1,14 +1,5 @@
 package main
 
-/*
-go run -mod vendor cmd/fetch/main.go -writer-uri 'fs:///usr/local/data/sfomuseum-data-whosonfirst/data' -belongs-to locality -belongs-to region -belongs-to country 102550865
-*/
-
-import (
-	_ "gocloud.dev/blob/fileblob"
-	_ "gocloud.dev/blob/memblob"
-)
-
 import (
 	_ "github.com/whosonfirst/go-reader-http"
 	_ "github.com/whosonfirst/go-reader-whosonfirst-data"	
