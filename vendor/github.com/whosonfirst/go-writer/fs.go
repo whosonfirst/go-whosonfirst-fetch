@@ -11,12 +11,6 @@ import (
 	"path/filepath"
 )
 
-func init() {
-	wr := NewFSWriter()
-	Register("fs", wr)	
-	Register("local", wr)
-}
-
 type FSWriter struct {
 	Writer
 	root      string
@@ -24,39 +18,44 @@ type FSWriter struct {
 	file_mode os.FileMode
 }
 
-func NewFSWriter() Writer {
+func init() {
 
-	wr := FSWriter{
-		dir_mode:  0755,
-		file_mode: 0644,
+	ctx := context.Background()
+	err := RegisterWriter(ctx, "fs", NewFSWriter)
+
+	if err != nil {
+		panic(err)
 	}
-
-	return &wr
 }
 
-func (wr *FSWriter) Open(ctx context.Context, uri string) error {
+func NewFSWriter(ctx context.Context, uri string) (Writer, error) {
 
 	u, err := url.Parse(uri)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	root := u.Path
 	info, err := os.Stat(root)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !info.IsDir() {
-		return errors.New("root is not a directory")
+		return nil, errors.New("root is not a directory")
 	}
 
 	// check for dir/file mode query parameters here
 
-	wr.root = root
-	return nil
+	wr := &FSWriter{
+		dir_mode:  0755,
+		file_mode: 0644,
+		root:      root,
+	}
+
+	return wr, nil
 }
 
 func (wr *FSWriter) Write(ctx context.Context, path string, fh io.ReadCloser) error {

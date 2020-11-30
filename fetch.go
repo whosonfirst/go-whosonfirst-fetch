@@ -155,7 +155,9 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	}
 
 	<-f.throttle
-
+	
+	golog.Println("GO")
+	
 	f.options.Logger.Debug("processing (%d)", id)
 
 	defer func() {
