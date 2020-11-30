@@ -3,14 +3,15 @@ package fetch
 import (
 	"bytes"
 	"context"
+	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-log"
-	"github.com/whosonfirst/go-reader"
-	"github.com/whosonfirst/go-writer"
 	"github.com/whosonfirst/go-whosonfirst-uri"
+	"github.com/whosonfirst/go-writer"
 	"io"
 	"io/ioutil"
+	// golog "log"
 	"strings"
 	"sync"
 	"time"
@@ -121,7 +122,7 @@ func (f *Fetcher) FetchID(ctx context.Context, id int64, fetch_belongsto []strin
 }
 
 func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) error {
-	
+
 	if id < 0 {
 		return nil
 	}
@@ -145,13 +146,12 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 		t1 := time.Now()
 
 		defer func() {
-
 			f.options.Logger.Status("Time to process %d: %v", id, time.Since(t1))
 		}()
 	}
 
 	<-f.throttle
-	
+
 	f.options.Logger.Debug("processing (%d)", id)
 
 	defer func() {
@@ -199,7 +199,7 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 
 	br := bytes.NewReader(body)
 	fh := ioutil.NopCloser(br)
-	
+
 	write_err := f.writer.Write(ctx, path, fh)
 
 	if write_err != nil {
@@ -214,7 +214,7 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 
 		br := bytes.NewReader(body)
 		fh := ioutil.NopCloser(br)
-		
+
 		ft, err := feature.LoadWOFFeatureFromReader(fh)
 
 		if err != nil {

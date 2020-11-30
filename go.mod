@@ -3,6 +3,7 @@ module github.com/whosonfirst/go-whosonfirst-fetch
 go 1.12
 
 require (
+	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/whosonfirst/go-reader v0.2.0
 	github.com/whosonfirst/go-reader-http v0.1.0
 	github.com/whosonfirst/go-reader-whosonfirst-data v1.0.0
