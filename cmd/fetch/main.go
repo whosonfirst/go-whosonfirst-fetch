@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/whosonfirst/go-reader"
-	"github.com/whosonfirst/go-whosonfirst-cli/flags"
+	"github.com/sfomuseum/go-flags/multi"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"github.com/whosonfirst/go-writer"
@@ -26,7 +26,7 @@ func main() {
 	retries := flag.Int("retries", 3, "The maximum number of attempts to try fetching a record.")
 	max_clients := flag.Int("max-clients", 10, "The maximum number of concurrent requests for multiple Who's On First records.")
 
-	var belongs_to flags.MultiString
+	var belongs_to multi.MultiString
 	flag.Var(&belongs_to, "belongs-to", "One or more placetypes that a given ID may belong to to also fetch. You may also pass 'all' as a short-hand to fetch the entire hierarchy for a place.")
 
 	flag.Usage = func() {
