@@ -10,8 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mitchellh/go-wordwrap"
-	"github.com/whosonfirst/go-reader"
 	"github.com/sfomuseum/go-flags/multi"
+	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"github.com/whosonfirst/go-writer"
@@ -84,10 +84,14 @@ func main() {
 		ids = append(ids, id)
 	}
 
-	err = fetcher.FetchIDs(ctx, ids, belongs_to...)
+	fetched_ids, err := fetcher.FetchIDs(ctx, ids, belongs_to...)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to fetch IDs, %v", err)
+	}
+
+	for _, id := range fetched_ids {
+		fmt.Println(id)
 	}
 
 }

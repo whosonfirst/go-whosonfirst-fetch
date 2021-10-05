@@ -3,6 +3,7 @@ package fetch
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/whosonfirst/go-ioutil"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
@@ -71,7 +72,7 @@ func NewFetcher(ctx context.Context, rdr reader.Reader, wr writer.Writer, opts *
 	return &f, nil
 }
 
-func (f *Fetcher) FetchIDs(ctx context.Context, ids []int64, belongs_to ...string) error {
+func (f *Fetcher) FetchIDs(ctx context.Context, ids []int64, belongs_to ...string) ([]int64, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -91,13 +92,21 @@ func (f *Fetcher) FetchIDs(ctx context.Context, ids []int64, belongs_to ...strin
 		case <-done_ch:
 			remaining -= 1
 		case err := <-err_ch:
-			return err
+			return nil, fmt.Errorf("Failed to fetch ID (%d remaining), %w", remaining, err)
 		default:
 			//
 		}
 	}
 
-	return nil
+	processed := make([]int64, 0)
+
+	f.processed.Range(func(k interface{}, v interface{}) bool {
+		id := k.(int64)
+		processed = append(processed, id)
+		return true
+	})
+
+	return processed, nil
 }
 
 func (f *Fetcher) FetchID(ctx context.Context, id int64, fetch_belongsto []string, done_ch chan bool, err_ch chan error) {
@@ -269,7 +278,7 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 
 		if len(ids) > 0 {
 
-			err = f.FetchIDs(ctx, ids)
+			_, err = f.FetchIDs(ctx, ids)
 
 			if err != nil {
 				// return err

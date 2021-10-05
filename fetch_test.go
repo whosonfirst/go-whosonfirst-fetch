@@ -55,7 +55,7 @@ func TestFetch(t *testing.T) {
 	ids := []int64{1360695651}
 	belongs_to := []string{"all"}
 
-	err = fetcher.FetchIDs(ctx, ids, belongs_to...)
+	_, err = fetcher.FetchIDs(ctx, ids, belongs_to...)
 
 	if err != nil {
 		t.Fatal(err)
