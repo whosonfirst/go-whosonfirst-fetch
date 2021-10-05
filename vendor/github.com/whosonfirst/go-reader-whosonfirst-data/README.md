@@ -55,6 +55,13 @@ For example:
 
 ## Tools
 
+To build binary versions of these tools run the `cli` Makefile target. For example:
+
+```
+$> make cli
+go build -mod vendor -o bin/read cmd/read/main.go
+```
+
 ### read
 
 ```
@@ -93,6 +100,7 @@ $> ./bin/read 85633041 | jq '.properties["wof:name"]'
 ## See also
 
 * https://github.com/whosonfirst-data
-* https://data.whosonfirst.org/findingaid/
 * https://github.com/go-whosonfirst-reader
 * https://github.com/go-whosonfirst-reader-github
+* https://github.com/go-whosonfirst-findingaid
+* https://github.com/go-whosonfirst-whosonfirst-reader

@@ -3,6 +3,7 @@ package fetch
 import (
 	"bytes"
 	"context"
+	"github.com/whosonfirst/go-ioutil"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
@@ -10,7 +11,6 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"github.com/whosonfirst/go-writer"
 	"io"
-	"io/ioutil"
 	// golog "log"
 	"strings"
 	"sync"
@@ -191,16 +191,20 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 		infile.Close()
 	}()
 
-	body, err := ioutil.ReadAll(infile)
+	body, err := io.ReadAll(infile)
 
 	if err != nil {
 		return err
 	}
 
 	br := bytes.NewReader(body)
-	fh := ioutil.NopCloser(br)
+	fh, err := ioutil.NewReadSeekCloser(br)
 
-	write_err := f.writer.Write(ctx, path, fh)
+	if err != nil {
+		return err
+	}
+
+	_, write_err := f.writer.Write(ctx, path, fh)
 
 	if write_err != nil {
 		return write_err
@@ -213,7 +217,7 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	if count_belongs_to > 0 {
 
 		br := bytes.NewReader(body)
-		fh := ioutil.NopCloser(br)
+		fh := io.NopCloser(br)
 
 		ft, err := feature.LoadWOFFeatureFromReader(fh)
 
