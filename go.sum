@@ -309,12 +309,14 @@ github.com/whosonfirst/go-cache v0.5.0/go.mod h1:YawO5K9kQa3XnrtdfwZ6OS4gwuO87S0
 github.com/whosonfirst/go-cache-blob v0.2.0/go.mod h1:CXgKyLBwkinhTLnuPs7/HVxPr0DSWGL7UoZF0ehmszo=
 github.com/whosonfirst/go-ioutil v0.0.1/go.mod h1:2dS1vWdAIkiHDvDF8fYyjv6k2NISmwaIjJJeEDBEdvg=
 github.com/whosonfirst/go-ioutil v1.0.0/go.mod h1:2dS1vWdAIkiHDvDF8fYyjv6k2NISmwaIjJJeEDBEdvg=
-github.com/whosonfirst/go-ioutil v1.0.1 h1:xITnQgEGdG+Qlph7jPY5htL7UpPSm2wEw1WiUlKTWPc=
 github.com/whosonfirst/go-ioutil v1.0.1/go.mod h1:2dS1vWdAIkiHDvDF8fYyjv6k2NISmwaIjJJeEDBEdvg=
+github.com/whosonfirst/go-ioutil v1.0.2 h1:+GJPfa42OFn5A+5yJSc5jQTQIkNV3/MhYyg4pavdrC8=
+github.com/whosonfirst/go-ioutil v1.0.2/go.mod h1:2dS1vWdAIkiHDvDF8fYyjv6k2NISmwaIjJJeEDBEdvg=
 github.com/whosonfirst/go-reader v0.5.0/go.mod h1:4ou/wZUss2CDZp27QK5ySDc8p98GVWvUiqqmwEprjgk=
 github.com/whosonfirst/go-reader v0.7.0/go.mod h1:6byB+UfZFNLYFqgsC/EKxTnKY8ahNgGHhUJsTrv1Jig=
-github.com/whosonfirst/go-reader v0.10.0 h1:RHQPNEqurYbI1N0SrqpUMMo0O4KTa5JSZi/sYGMtxig=
 github.com/whosonfirst/go-reader v0.10.0/go.mod h1:YNcxm9xr0++Jz4nXWZjtQ/RRVq0fCjq1CwJdmJgfOh8=
+github.com/whosonfirst/go-reader v0.11.0 h1:CCk4sOMqP58zyVzcf2Q/FuBW5MW5CxSaNt6/Tek1LuI=
+github.com/whosonfirst/go-reader v0.11.0/go.mod h1:sj+z1x90XEBy/QBy5nuBa7EGntGAC2QhbAW1Y1QZ5nM=
 github.com/whosonfirst/go-reader-github v0.4.2 h1:UOOeorUm0e5ryxG2043KadtnCT+f0nbiMbKReS7y5Vo=
 github.com/whosonfirst/go-reader-github v0.4.2/go.mod h1:+x9HvzlBwiyHHuHQ8dOzSRccvxFSRLApIMCSkzb77nQ=
 github.com/whosonfirst/go-reader-http v0.3.0 h1:EgHoK6jSfa3kkyx8pS4eFgzK+Egv2F4LukadPDTtEDQ=
