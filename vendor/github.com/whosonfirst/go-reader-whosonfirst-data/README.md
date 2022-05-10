@@ -2,6 +2,10 @@
 
 Who's On First (GitHub) data support for the go-reader.Reader interface.
 
+## Important
+
+This package has been deprecated and will no longer be updated. It has been superseded by [whosonfirst/go-reader-findingaid](https://github.com/whosonfirst/go-reader-findingaid).
+
 ## Example
 
 ```
