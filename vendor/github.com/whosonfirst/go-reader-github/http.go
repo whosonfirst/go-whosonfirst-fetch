@@ -2,16 +2,17 @@ package reader
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	wof_reader "github.com/whosonfirst/go-reader"
-	"github.com/whosonfirst/go-ioutil"
 	"io"
-	_ "log"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/whosonfirst/go-ioutil"
+	wof_reader "github.com/whosonfirst/go-reader"
 )
 
 type GitHubReader struct {
@@ -19,6 +20,7 @@ type GitHubReader struct {
 	owner    string
 	repo     string
 	branch   string
+	prefix   string
 	throttle <-chan time.Time
 }
 
@@ -34,14 +36,14 @@ func init() {
 
 func NewGitHubReader(ctx context.Context, uri string) (wof_reader.Reader, error) {
 
-	rate := time.Second / 3
-	throttle := time.Tick(rate)
-
 	u, err := url.Parse(uri)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to parse URI, %w", err)
 	}
+
+	rate := time.Second / 3
+	throttle := time.Tick(rate)
 
 	r := &GitHubReader{
 		throttle: throttle,
@@ -53,7 +55,7 @@ func NewGitHubReader(ctx context.Context, uri string) (wof_reader.Reader, error)
 	parts := strings.Split(path, "/")
 
 	if len(parts) != 1 {
-		return nil, errors.New("Invalid path")
+		return nil, fmt.Errorf("Invalid path")
 	}
 
 	r.repo = parts[0]
@@ -67,6 +69,12 @@ func NewGitHubReader(ctx context.Context, uri string) (wof_reader.Reader, error)
 		r.branch = branch
 	}
 
+	prefix := q.Get("prefix")
+
+	if prefix != "" {
+		r.prefix = prefix
+	}
+
 	return r, nil
 }
 
@@ -74,22 +82,27 @@ func (r *GitHubReader) Read(ctx context.Context, uri string) (io.ReadSeekCloser,
 
 	<-r.throttle
 
+	logger := slog.Default()
+	logger = logger.With("uri", uri)
+
 	url := r.ReaderURI(ctx, uri)
+
+	logger.Debug("Read URL", "url", url)
 
 	rsp, err := http.Get(url)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to GET uri, %w", err)
 	}
 
 	if rsp.StatusCode != 200 {
-		return nil, errors.New(rsp.Status)
+		return nil, fmt.Errorf("Unexpected status: %s", rsp.Status)
 	}
 
 	fh, err := ioutil.NewReadSeekCloser(rsp.Body)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to create ReadSeekCloser, %w", err)
 	}
 
 	return fh, nil
@@ -97,5 +110,9 @@ func (r *GitHubReader) Read(ctx context.Context, uri string) (io.ReadSeekCloser,
 
 func (r *GitHubReader) ReaderURI(ctx context.Context, key string) string {
 
-	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/data/%s", r.owner, r.repo, r.branch, key)
+	if r.prefix != "" {
+		key = filepath.Join(r.prefix, key)
+	}
+
+	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", r.owner, r.repo, r.branch, key)
 }

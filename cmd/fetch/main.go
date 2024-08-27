@@ -2,22 +2,21 @@
 package main
 
 import (
-	_ "github.com/whosonfirst/go-reader-http"
-	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
-)
-
-import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
+	_ "github.com/whosonfirst/go-reader-http"
+	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
+	
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/sfomuseum/go-flags/multi"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
 	"github.com/whosonfirst/go-whosonfirst-uri"
-	"github.com/whosonfirst/go-writer"
-	"log"
-	"os"
+	"github.com/whosonfirst/go-writer/v3"	
 )
 
 func main() {

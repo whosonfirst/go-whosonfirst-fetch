@@ -16,7 +16,7 @@
 // DynamoDB.
 // Use OpenCollection to construct a *docstore.Collection.
 //
-// URLs
+// # URLs
 //
 // For docstore.OpenCollection, awsdynamodb registers for the scheme
 // "dynamodb". The default URL opener will use an AWS session with the default
@@ -26,15 +26,15 @@
 // URLOpener.
 // See https://gocloud.dev/concepts/urls/ for background information.
 //
-// As
+// # As
 //
 // awsdynamodb exposes the following types for As:
-//  - Collection.As: *dynamodb.DynamoDB
-//  - ActionList.BeforeDo: *dynamodb.BatchGetItemInput or *dynamodb.PutItemInput or *dynamodb.DeleteItemInput
-//                         or *dynamodb.UpdateItemInput
-//  - Query.BeforeQuery: *dynamodb.QueryInput or *dynamodb.ScanInput
-//  - DocumentIterator: *dynamodb.QueryOutput or *dynamodb.ScanOutput
-//  - ErrorAs: awserr.Error
+//   - Collection.As: *dynamodb.DynamoDB
+//   - ActionList.BeforeDo: *dynamodb.BatchGetItemInput or *dynamodb.PutItemInput or *dynamodb.DeleteItemInput
+//     or *dynamodb.UpdateItemInput
+//   - Query.BeforeQuery: *dynamodb.QueryInput or *dynamodb.ScanInput
+//   - DocumentIterator: *dynamodb.QueryOutput or *dynamodb.ScanOutput
+//   - ErrorAs: awserr.Error
 package awsdynamodb
 
 import (
@@ -180,17 +180,17 @@ func (c *collection) runGets(ctx context.Context, actions []*driver.Action, errs
 		for i := 0; i < n; i++ {
 			i := i
 			t.Acquire()
-			go func() {
+			go func(group []*driver.Action) {
 				defer t.Release()
 				c.batchGet(ctx, group, errs, opts, batchSize*i, batchSize*(i+1)-1)
-			}()
+			}(group)
 		}
 		if n*batchSize < len(group) {
 			t.Acquire()
-			go func() {
+			go func(group []*driver.Action) {
 				defer t.Release()
 				c.batchGet(ctx, group, errs, opts, batchSize*n, len(group)-1)
-			}()
+			}(group)
 		}
 	}
 	t.Wait()
