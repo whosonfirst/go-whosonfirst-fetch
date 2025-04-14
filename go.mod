@@ -1,6 +1,6 @@
 module github.com/whosonfirst/go-whosonfirst-fetch
 
-go 1.22.1
+go 1.23.0
 
 toolchain go1.24.2
 
@@ -9,7 +9,6 @@ require (
 	github.com/sfomuseum/go-flags v0.10.0
 	github.com/whosonfirst/go-ioutil v1.0.2
 	github.com/whosonfirst/go-reader v1.1.0
-	github.com/whosonfirst/go-reader-http v0.3.2
 	github.com/whosonfirst/go-reader-whosonfirst-data v1.4.2
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.28
 	github.com/whosonfirst/go-whosonfirst-uri v1.3.0
@@ -63,6 +62,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/whosonfirst/go-reader-github v0.6.11 // indirect
+	github.com/whosonfirst/go-reader-http v0.3.2 // indirect
 	github.com/whosonfirst/go-whosonfirst-findingaid/v2 v2.8.7 // indirect
 	github.com/whosonfirst/go-whosonfirst-flags v0.5.1 // indirect
 	github.com/whosonfirst/go-whosonfirst-sources v0.1.0 // indirect
