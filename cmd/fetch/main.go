@@ -8,7 +8,7 @@ import (
 	_ "github.com/whosonfirst/go-reader-http"
 	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
 
-	"github.com/whosonfirst/go-whosonfirst-fetch/app/fetch"
+	"github.com/whosonfirst/go-whosonfirst-fetch/v2/app/fetch"
 )
 
 func main() {
