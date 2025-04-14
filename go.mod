@@ -1,14 +1,15 @@
 module github.com/whosonfirst/go-whosonfirst-fetch
 
 go 1.22.1
-toolchain go1.23.7
+
+toolchain go1.24.2
 
 require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/sfomuseum/go-flags v0.10.0
 	github.com/whosonfirst/go-ioutil v1.0.2
-	github.com/whosonfirst/go-reader v1.0.2
-	github.com/whosonfirst/go-reader-http v0.3.1
+	github.com/whosonfirst/go-reader v1.1.0
+	github.com/whosonfirst/go-reader-http v0.3.2
 	github.com/whosonfirst/go-reader-whosonfirst-data v1.4.2
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.28
 	github.com/whosonfirst/go-whosonfirst-uri v1.3.0

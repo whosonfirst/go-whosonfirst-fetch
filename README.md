@@ -11,8 +11,10 @@ Tools for fetching Who's On First records and their ancestors.
 ```
 import (
 	"context"
+
+	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
+	
 	"github.com/whosonfirst/go-reader"
-	_ "github.com/whosonfirst/go-reader-whosonfirst-data"		
 	"github.com/whosonfirst/go-writer"
 	"github.com/whosonfirst/go-whosonfirst-fetch"
 )
