@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +14,7 @@ import (
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	"github.com/whosonfirst/go-whosonfirst-uri"
-	"github.com/whosonfirst/go-writer/v3"	
+	"github.com/whosonfirst/go-writer/v3"
 )
 
 // Options is a struct containing configuration options for fetching Who's On First record
@@ -23,8 +23,6 @@ type Options struct {
 	Timings bool
 	// MaxClients is the number of simultaneous clients in use to fetch Who's On First records
 	MaxClients int
-	// Logger is a `log.Logger` instance for providing feedback
-	Logger *log.Logger
 	// Retries is the number of times to retry a failed attemp to fetch a Who's On First record
 	Retries int
 }
@@ -33,12 +31,9 @@ type Options struct {
 // clients set to 10 and a `log.Default` logging instance.
 func DefaultOptions() (*Options, error) {
 
-	logger := log.Default()
-
 	o := Options{
 		Timings:    false,
 		MaxClients: 10,
-		Logger:     logger,
 		Retries:    0,
 	}
 
@@ -151,6 +146,9 @@ func (f *Fetcher) FetchID(ctx context.Context, id int64, fetch_belongsto []strin
 // record retrieved that will subsequently be fetched.
 func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) error {
 
+	logger := slog.Default()
+	logger = logger.With("id", id)
+
 	if id < 0 {
 		return nil
 	}
@@ -158,14 +156,14 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	_, ok := f.processed.Load(id)
 
 	if ok {
-		f.options.Logger.Printf("%d has already been processed, skipping", id)
+		logger.Debug("ID has already been processed, skipping")
 		return nil
 	}
 
 	_, ok = f.processing.LoadOrStore(id, true)
 
 	if ok {
-		f.options.Logger.Printf("%d is being processed, skipping", id)
+		logger.Debug("ID is being processed, skipping")
 		return nil
 	}
 
@@ -174,13 +172,13 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 		t1 := time.Now()
 
 		defer func() {
-			f.options.Logger.Printf("Time to process %d: %v", id, time.Since(t1))
+			logger.Debug("Time to process ID", "time", time.Since(t1))
 		}()
 	}
 
 	<-f.throttle
 
-	f.options.Logger.Printf("processing (%d)", id)
+	logger.Debug("Processing ID")
 
 	defer func() {
 		f.throttle <- true
@@ -190,7 +188,8 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	path, err := uri.Id2RelPath(id)
 
 	if err != nil {
-		return err
+		logger.Error("Failed to derive path", "error", err)
+		return fmt.Errorf("Failed to derive path for ID, %w", err)
 	}
 
 	var infile io.ReadCloser
@@ -207,12 +206,11 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 		if read_err == nil {
 			break
 		}
-
-		//logger.Warning("Failed to fetch %d because %s (remaining attempts: %d)", wofid, err, attempts)
 	}
 
 	if read_err != nil {
-		return read_err
+		logger.Error("Failed to open record for reading", "error", err)
+		return fmt.Errorf("Failed to open record for reading for ID, %w", read_err)
 	}
 
 	defer func() {
@@ -222,20 +220,22 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 	body, err := io.ReadAll(infile)
 
 	if err != nil {
-		return err
+		logger.Error("Failed to read body", "error", err)
+		return fmt.Errorf("Failed to read body, %w", err)
 	}
 
 	br := bytes.NewReader(body)
 	fh, err := ioutil.NewReadSeekCloser(br)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to create ReadSeekCloser, %w", err)
 	}
 
 	_, write_err := f.writer.Write(ctx, path, fh)
 
 	if write_err != nil {
-		return write_err
+		logger.Error("Failed to write record", "path", path, "error", err)
+		return fmt.Errorf("Failed to write record, %w", write_err)
 	}
 
 	f.processed.Store(id, true)
@@ -288,6 +288,7 @@ func (f *Fetcher) fetchID(ctx context.Context, id int64, belongs_to ...string) e
 
 		if len(ids) > 0 {
 
+			logger.Debug("Fetch ancecestors", "count", len(ids))
 			_, err = f.FetchIDs(ctx, ids)
 
 			if err != nil {

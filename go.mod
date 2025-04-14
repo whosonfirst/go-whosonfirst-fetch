@@ -1,6 +1,6 @@
-module github.com/whosonfirst/go-whosonfirst-fetch
+module github.com/whosonfirst/go-whosonfirst-fetch/v2
 
-go 1.22.1
+go 1.23.0
 
 toolchain go1.24.2
 

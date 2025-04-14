@@ -4,22 +4,22 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"testing"
 
 	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
-	
+
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-uri"
-	"github.com/whosonfirst/go-writer/v3"	
+	"github.com/whosonfirst/go-writer/v3"
 )
 
 func TestFetch(t *testing.T) {
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
-	
+
 	ctx := context.Background()
 
 	tmpdir, err := ioutil.TempDir("", "fetch")

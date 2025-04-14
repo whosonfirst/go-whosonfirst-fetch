@@ -110,18 +110,51 @@ Under the hood this tool uses a number of other packages for handling specific t
 
 ### Readers
 
-Readers exported by the following packages are available to the `fetch` tool:
+Readers exported by the following packages are available to the `fetch` tool, by default:
 
 * https://github.com/whosonfirst/go-reader
 * https://github.com/whosonfirst/go-reader-whosonfirst-data
 * https://github.com/whosonfirst/go-reader-http
-* https://github.com/whosonfirst/go-reader-github
 
 ### Writers
 
 Writers exported by the following packages are available to the `fetch` tool:
 
 * https://github.com/whosonfirst/go-writer
+
+### Alternate readers and writers
+
+As mentioned above the tool supports a limited set of default "readers" and "writers". If you need to add additional readers or writers you'll need to clone the code in [cmd/fetch/main.go](cmd/fetch/main.go) and add the relevant `import` statements.
+
+The "guts" of the `fetch` tool live in [app/fetch/fetch.go](app/fetch/fetch.go) which allows `cmd/fetch/main.go` to be very small in order to make add custom imports easy (or at least fast). 
+
+For example, this is what the code for a custom `fetch` tool which could also read from GitHub and write to a GeoParquet database would look like:
+
+```
+package main
+
+import (
+	"context"
+	"log"
+
+	_ "github.com/whosonfirst/go-reader-http"
+	_ "github.com/whosonfirst/go-reader-github"
+	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
+	_ "github.com/whosonfirst/go-writer-geoparquet/v3"
+	
+	"github.com/whosonfirst/go-whosonfirst-fetch/app/fetch"
+)
+
+func main() {
+
+	ctx := context.Background()
+	err := fetch.Run(ctx)
+
+	if err != nil {
+		log.Fatalf("Failed to fetch records, %v", err)
+	}
+}
+```
 
 ## See also
 
