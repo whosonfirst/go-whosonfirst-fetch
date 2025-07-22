@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
+	_ "github.com/whosonfirst/go-reader-findingaid/v2"
 
-	"github.com/whosonfirst/go-reader"
+	"github.com/whosonfirst/go-reader/v2"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"github.com/whosonfirst/go-writer/v3"
 )
@@ -32,7 +32,7 @@ func TestFetch(t *testing.T) {
 
 	defer os.RemoveAll(tmpdir)
 
-	r, err := reader.NewReader(ctx, "whosonfirst-data://")
+	r, err := reader.NewReader(ctx, WHOSONFIRST_DATA_READER_URI)
 
 	if err != nil {
 		t.Fatal(err)

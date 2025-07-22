@@ -5,8 +5,7 @@ import (
 	"context"
 	"log"
 
-	_ "github.com/whosonfirst/go-reader-http"
-	_ "github.com/whosonfirst/go-reader-whosonfirst-data"
+	_ "github.com/whosonfirst/go-reader-findingaid/v2"
 
 	"github.com/whosonfirst/go-whosonfirst-fetch/v2/app/fetch"
 )

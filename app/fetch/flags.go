@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/sfomuseum/go-flags/flagset"
 	"github.com/sfomuseum/go-flags/multi"
+	"github.com/whosonfirst/go-whosonfirst-fetch/v2"
 )
 
 var reader_uri string
@@ -21,7 +22,7 @@ func DefaultFlagSet() *flag.FlagSet {
 
 	fs := flagset.NewFlagSet("fetch")
 
-	fs.StringVar(&reader_uri, "reader-uri", "whosonfirst-data://", "A valid whosonfirst/go-reader URI.")
+	fs.StringVar(&reader_uri, "reader-uri", fetch.WHOSONFIRST_DATA_READER_URI, "A valid whosonfirst/go-reader URI.")
 	fs.StringVar(&writer_uri, "writer-uri", "stdout://", "A valid whosonfirst/go-writer URI.")
 	fs.IntVar(&retries, "retries", 3, "The maximum number of attempts to try fetching a record.")
 	fs.IntVar(&max_clients, "max-clients", 10, "The maximum number of concurrent requests for multiple Who's On First records.")
@@ -37,7 +38,7 @@ func DefaultFlagSet() *flag.FlagSet {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fs.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nNotes:\n\n")
-		fmt.Fprintf(os.Stderr, wordwrap.WrapString("pathN may be any valid Who's On First ID or URI that can be parsed by the go-whosonfirst-uri package.\n\n", 80))
+		fmt.Fprint(os.Stderr, wordwrap.WrapString("pathN may be any valid Who's On First ID or URI that can be parsed by the go-whosonfirst-uri package.\n\n", 80))
 	}
 
 	return fs
